@@ -1,4 +1,5 @@
 import 'package:chatbot/core/constants.dart';
+import 'package:chatbot/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 
@@ -19,7 +20,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
       debugShowCheckedModeBanner: false,
-      home: const Text("AIzaSyCRG1AX9DUx0zhVbmQZGxkoGM9LMfbo01M"),
+      home: const HomeScreen(),
     );
   }
 }

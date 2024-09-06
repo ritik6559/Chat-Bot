@@ -23,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
       id: "1",
       firstName: "Gemini",
       profileImage:
-          "https://seeklogo.com/images/G/google-gemini-logo-A578782669-seeklogo.com.png");
+          "https://tse2.mm.bing.net/th?id=OIP.AsXti9JBcuEGIODbisEAYwHaEK&pid=Api&P=0&h=180");
 
   @override
   Widget build(BuildContext context) {
@@ -53,10 +53,30 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       String question = chatmessage.text;
       gemini.streamGenerateContent(question).listen(
-            (event) {
-              
-            },
-          );
+        (event) {
+          ChatMessage? lastMessage = messages.firstOrNull;
+          if (lastMessage != null && lastMessage.user == geminiUser) {
+            lastMessage = messages.removeAt(0);
+            String response = event.content?.parts?.fold(
+                    "", (previous, current) => "$previous ${current.text}") ??
+                "";
+            lastMessage.text += response;
+            setState(() {
+              messages = [lastMessage!, ...messages];
+            });
+          } else {
+            String response = event.content?.parts?.fold(
+                    "", (previous, current) => "$previous ${current.text}") ??
+                "";
+            ChatMessage message = ChatMessage(
+                user: geminiUser, createdAt: DateTime.now(), text: response);
+
+            setState(() {
+              messages = [message, ...messages];
+            });
+          }
+        },
+      );
     } catch (e) {
       print(e);
     }
