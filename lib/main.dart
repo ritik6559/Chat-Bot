@@ -1,8 +1,11 @@
-import 'package:chatbot/screens/home_screen.dart';
-import 'package:chatbot/utils/pallete.dart';
+import 'package:chatbot/core/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
 
 void main() {
+  Gemini.init(
+    apiKey: GEMINI_API,
+  );
   runApp(const MyApp());
 }
 
@@ -14,12 +17,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Chat App',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)
-        
-      ),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
       debugShowCheckedModeBanner: false,
       home: const Text("AIzaSyCRG1AX9DUx0zhVbmQZGxkoGM9LMfbo01M"),
     );
   }
 }
-
