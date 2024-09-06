@@ -20,10 +20,11 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ChatMessage> messages = [];
 
   ChatUser geminiUser = ChatUser(
-      id: "1",
-      firstName: "Gemini",
-      profileImage:
-          "https://tse2.mm.bing.net/th?id=OIP.AsXti9JBcuEGIODbisEAYwHaEK&pid=Api&P=0&h=180");
+    id: "1",
+    firstName: "Gemini",
+    profileImage:
+        "https://tse2.mm.bing.net/th?id=OIP.AsXti9JBcuEGIODbisEAYwHaEK&pid=Api&P=0&h=180",
+  );
 
   @override
   Widget build(BuildContext context) {
