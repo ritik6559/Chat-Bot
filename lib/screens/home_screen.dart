@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:image_picker/image_picker.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -41,6 +45,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildUI() {
     return DashChat(
+      inputOptions: InputOptions(
+        trailing: [
+          IconButton(
+            onPressed: _sendMediaMessage,
+            icon: const Icon(
+              Icons.image,
+            ),
+          ),
+        ],
+      ),
       currentUser: currentUser,
       onSend: _sendMessage,
       messages: messages,
@@ -53,7 +67,18 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     try {
       String question = chatmessage.text;
-      gemini.streamGenerateContent(question).listen(
+      List<Uint8List>? images;
+      if (chatmessage.medias?.isNotEmpty ?? false) {
+        images = [
+          File(chatmessage.medias!.first.url).readAsBytesSync(),
+        ];
+      }
+      gemini
+          .streamGenerateContent(
+        question,
+        images: images,
+      )
+          .listen(
         (event) {
           ChatMessage? lastMessage = messages.firstOrNull;
           if (lastMessage != null && lastMessage.user == geminiUser) {
@@ -80,6 +105,29 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     } catch (e) {
       print(e);
+    }
+  }
+
+  void _sendMediaMessage() async {
+    ImagePicker picker = ImagePicker();
+    XFile? file = await picker.pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (file != null) {
+      ChatMessage chatMessage = ChatMessage(
+        user: currentUser,
+        createdAt: DateTime.now(),
+        text: "Describe this picture",
+        medias: [
+          ChatMedia(
+            url: file.path,
+            fileName: "",
+            type: MediaType.image,
+          ),
+        ],
+      );
+      _sendMessage(chatMessage);
     }
   }
 }
