@@ -1,5 +1,5 @@
 import 'package:chatbot/core/constants.dart';
-import 'package:chatbot/screens/home_screen.dart';
+import 'package:chatbot/screens/mood_selection_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 
@@ -18,9 +18,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Chat App',
       theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+        ),
+      ),
       debugShowCheckedModeBanner: false,
-      home: const HomeScreen(),
+      home: const MoodSelectionScreen(),
     );
   }
 }
