@@ -1,3 +1,4 @@
+import 'package:chatbot/common/custom_text_field.dart';
 import 'package:chatbot/models/message.dart';
 import 'package:chatbot/widget/chat_bubble.dart';
 import 'package:flutter/material.dart';
@@ -19,8 +20,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final List<Message> _messages = [];
   final ScrollController _scrollController = ScrollController();
   final MistralAIClient _client = MistralAIClient(
-    apiKey:
-        'ZLKjWTjbRyzwNtA984AhqFkM319l0khn', // Replace with your Mistral AI API key
+    apiKey: 'ZLKjWTjbRyzwNtA984AhqFkM319l0khn',
   );
   late String _systemPrompt;
 
@@ -65,7 +65,7 @@ class _ChatScreenState extends State<ChatScreen> {
         Message(
           type: 'bot',
           message:
-              "Bot: Hello! I'm in a ${widget.conversationStyle.toLowerCase()} mood. How can I assist you today?",
+              "Hello! I'm in a ${widget.conversationStyle.toLowerCase()} mood. Let's chat!!!",
         ),
       );
     });
@@ -102,10 +102,12 @@ class _ChatScreenState extends State<ChatScreen> {
         _scrollToBottom();
 
         setState(() {
+          print(chatResponse.choices?[0].message.content.toString() ?? '');
           _messages.add(
             Message(
               type: "bot",
-              message: chatResponse.choices?[0].message.toString() ?? '',
+              message:
+                  chatResponse.choices?[0].message.content.toString() ?? '',
             ),
           );
         });
@@ -140,48 +142,44 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Mistral AI Chatbot',
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      body: Container(
+        height: double.infinity,
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+              'assets/images/love_background.webp',
+            ),
+            fit: BoxFit.cover,
+          ),
         ),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return ChatBubble(
-                  message: message.message,
-                  isMe: message.type == 'user' ? true : false,
-                );
-              },
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                itemCount: _messages.length,
+                itemBuilder: (context, index) {
+                  final message = _messages[index];
+                  return ChatBubble(
+                    message: message.message,
+                    isMe: message.type == 'user' ? true : false,
+                  );
+                },
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter your message',
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.send,
-                  ),
-                  onPressed: _sendMessage,
-                ),
-              ],
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CustomTextField(
+                controller: _controller,
+                hint: 'Message....',
+                onDone: _sendMessage,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

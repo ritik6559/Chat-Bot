@@ -33,10 +33,8 @@ class ChatBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 color: isMe
-                    ? Colors.blue
-                    : const Color(
-                        0xFF262626,
-                      ),
+                    ? Colors.pink
+                    : Colors.purple,
                 gradient: isMe
                     ? const LinearGradient(
                         begin: Alignment.topLeft,
@@ -61,7 +59,6 @@ class ChatBubble extends StatelessWidget {
       ),
     );
   }
-  
 
   Widget _buildAvatar() {
     return Container(
