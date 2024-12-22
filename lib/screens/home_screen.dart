@@ -1,133 +1,186 @@
-import 'dart:io';
-import 'dart:typed_data';
-
-import 'package:dash_chat_2/dash_chat_2.dart';
+import 'package:chatbot/common/custom_text_field.dart';
+import 'package:chatbot/models/message.dart';
+import 'package:chatbot/widget/chat_bubble.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gemini/flutter_gemini.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:mistralai_client_dart/mistralai_client_dart.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class ChatScreen extends StatefulWidget {
+  final String conversationStyle;
+  const ChatScreen({
+    super.key,
+    required this.conversationStyle,
+  });
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  final Gemini gemini = Gemini.instance;
-
-  ChatUser currentUser = ChatUser(
-    id: "0",
-    firstName: "User",
+class _ChatScreenState extends State<ChatScreen> {
+  final TextEditingController _controller = TextEditingController();
+  final List<Message> _messages = [];
+  final ScrollController _scrollController = ScrollController();
+  final MistralAIClient _client = MistralAIClient(
+    apiKey: 'ZLKjWTjbRyzwNtA984AhqFkM319l0khn',
   );
+  late String _systemPrompt;
 
-  List<ChatMessage> messages = [];
+  @override
+  void initState() {
+    super.initState();
+    _setSystemPrompt();
+    _addInitialBotMessage();
+  }
 
-  ChatUser geminiUser = ChatUser(
-    id: "1",
-    firstName: "Gemini",
-    profileImage:
-        "https://tse2.mm.bing.net/th?id=OIP.AsXti9JBcuEGIODbisEAYwHaEK&pid=Api&P=0&h=180",
-  );
+  void _setSystemPrompt() {
+    switch (widget.conversationStyle) {
+      case 'Sexual':
+        setState(() {
+          _systemPrompt =
+              "You are a sexual AI assistant. Respond to the user's messages in a sexual tone, affectionate, and lustful manner.";
+        });
+        break;
+      case 'Romantic':
+        setState(() {
+          _systemPrompt =
+              "You are a romantic AI assistant. Respond to the user's messages in a warm tone, affectionate and loving manner";
+        });
+        break;
+      case 'Happy':
+        setState(() {
+          _systemPrompt =
+              "You are an extremely cheerful AI assistant. Respond to the user's messages with enthusiasm, positivity, and excitement.";
+        });
+        break;
+      default:
+        setState(() {
+          _systemPrompt =
+              "You are a helpful AI assistant. Respond to the user's messages in a neutral and informative manner.";
+        });
+    }
+  }
+
+  void _addInitialBotMessage() {
+    setState(() {
+      _messages.add(
+        Message(
+          type: 'bot',
+          message:
+              "Hello! I'm in a ${widget.conversationStyle.toLowerCase()} mood. Let's chat!!!",
+        ),
+      );
+    });
+  }
+
+  void _sendMessage() async {
+    if (_controller.text.isNotEmpty) {
+      final query = _controller.text.trim();
+      _controller.clear();
+      setState(() {
+        _messages.add(
+          Message(
+            type: "user",
+            message: query,
+          ),
+        );
+      });
+
+      _scrollToBottom();
+
+      final request = ChatCompletionRequest(
+        model: 'mistral-small-latest',
+        messages: [
+          UserMessage(
+            content: UserMessageContent.string(
+              '$query and give the result should be strictly in $_systemPrompt manner and respond back with a more $_systemPrompt respond in a human manner',
+            ),
+          ),
+        ],
+      );
+
+      try {
+        final chatResponse = await _client.chatComplete(request: request);
+        _scrollToBottom();
+
+        setState(() {
+          print(chatResponse.choices?[0].message.content.toString() ?? '');
+          _messages.add(
+            Message(
+              type: "bot",
+              message:
+                  chatResponse.choices?[0].message.content.toString() ?? '',
+            ),
+          );
+        });
+      } catch (e) {
+        setState(() {
+          _messages.add(
+            Message(
+              type: 'bot',
+              message: 'Sorry, I encountered an error',
+            ),
+          );
+        });
+        print(
+          "Error: $e",
+        );
+      }
+    }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text(
-          "Chat bot",
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      body: Container(
+        height: double.infinity,
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+              'assets/images/love_background.webp',
+            ),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                itemCount: _messages.length,
+                itemBuilder: (context, index) {
+                  final message = _messages[index];
+                  return ChatBubble(
+                    message: message.message,
+                    isMe: message.type == 'user' ? true : false,
+                  );
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CustomTextField(
+                controller: _controller,
+                hint: 'Message....',
+                onDone: _sendMessage,
+              ),
+            ),
+          ],
         ),
       ),
-      body: _buildUI(),
     );
-  }
-
-  Widget _buildUI() {
-    return DashChat(
-      inputOptions: InputOptions(
-        trailing: [
-          IconButton(
-            onPressed: _sendMediaMessage,
-            icon: const Icon(
-              Icons.image,
-            ),
-          ),
-        ],
-      ),
-      currentUser: currentUser,
-      onSend: _sendMessage,
-      messages: messages,
-    );
-  }
-
-  void _sendMessage(ChatMessage chatmessage) {
-    setState(() {
-      messages = [chatmessage, ...messages];
-    });
-    try {
-      String question = chatmessage.text;
-      List<Uint8List>? images;
-      if (chatmessage.medias?.isNotEmpty ?? false) {
-        images = [
-          File(chatmessage.medias!.first.url).readAsBytesSync(),
-        ];
-      }
-      gemini
-          .streamGenerateContent(
-        question,
-        images: images,
-      )
-          .listen(
-        (event) {
-          ChatMessage? lastMessage = messages.firstOrNull;
-          if (lastMessage != null && lastMessage.user == geminiUser) {
-            lastMessage = messages.removeAt(0);
-            String response = event.content?.parts?.fold(
-                    "", (previous, current) => "$previous ${current.text}") ??
-                "";
-            lastMessage.text += response;
-            setState(() {
-              messages = [lastMessage!, ...messages];
-            });
-          } else {
-            String response = event.content?.parts?.fold(
-                    "", (previous, current) => "$previous ${current.text}") ??
-                "";
-            ChatMessage message = ChatMessage(
-                user: geminiUser, createdAt: DateTime.now(), text: response);
-
-            setState(() {
-              messages = [message, ...messages];
-            });
-          }
-        },
-      );
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  void _sendMediaMessage() async {
-    ImagePicker picker = ImagePicker();
-    XFile? file = await picker.pickImage(
-      source: ImageSource.gallery,
-    );
-
-    if (file != null) {
-      ChatMessage chatMessage = ChatMessage(
-        user: currentUser,
-        createdAt: DateTime.now(),
-        text: "Describe this picture",
-        medias: [
-          ChatMedia(
-            url: file.path,
-            fileName: "",
-            type: MediaType.image,
-          ),
-        ],
-      );
-      _sendMessage(chatMessage);
-    }
   }
 }
